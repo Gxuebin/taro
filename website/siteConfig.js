@@ -36,16 +36,19 @@ const siteConfig = {
   // For top-level user or org sites, the organization is still the same.
   // e.g., for the https://JoelMarcey.github.io site, it would be set like...
   //   organizationName: 'JoelMarcey'
-
+  blogSidebarCount: 'ALL',
+  blogSidebarTitle: { default: '最近更新', all: '全部文章' },
   // For no header links in the top nav bar -> headerLinks: [],
   headerLinks: [
     {doc: 'README', label: '文档'},
     {doc: 'components-desc', label: '组件库'},
     {doc: 'apis/about/desc', label: 'API'},
+    { blog: true, label: 'Blog' },
     {search: true},
     {href: 'https://taro-ui.jd.com', label: 'Taro-UI'},
     {href: 'https://taro-ext.jd.com', label: '物料市场'},
-    {href: 'https://taro-club.jd.com', label: '论坛'}
+    {href: 'https://taro-club.jd.com', label: '论坛'},
+    {href: 'https://taro.jd.com/jdmp/index.html', label: '京东小程序'}
   ],
 
   algolia: {
@@ -85,15 +88,16 @@ const siteConfig = {
   highlight: {
     // Highlight.js theme to use for syntax highlighting in code blocks
     // theme: 'tomorrow-night',
-    theme: 'Vs'
+    defaultLang: 'javascript',
+    theme: 'vs',
+    themeUrl: 'https://storage.jd.com/taro-resource/vs.min.css'
   },
 
-  usePrism: true,
+  usePrism: ['javascript', 'jsx', 'tsx', 'typescript', 'bash'],
 
   // Add custom scripts here that would be placed in <script> tags
   scripts: [
-    'http://storage.jd.com/taro-docs/buttons.js',
-    'https://jdc.jd.com/demo/talenttest/js/url.js',
+    'https://storage.jd.com/taro-docs/buttons.js',
     {
       src: 'https://storage.jd.com/taro-resource/tongji.js',
       async: true

@@ -6,10 +6,24 @@ import * as glob from 'glob'
 import traverse from 'babel-traverse'
 import generate from 'babel-generator'
 import * as wxTransformer from '@tarojs/transformer-wx'
+import {
+  cssImports,
+  printLog,
+  resolveScriptPath,
+  resolveStylePath,
+  isNpmPkg,
+  processTypeEnum,
+  REG_STYLE,
+  REG_TYPESCRIPT,
+  REG_SCRIPT,
+  REG_JSON,
+  REG_FONT,
+  REG_IMAGE,
+  REG_MEDIA,
+  CSS_EXT
+} from '@tarojs/helper'
 
 import { IBuildData } from './ui.types'
-import { cssImports, printLog, resolveScriptPath, resolveStylePath, isNpmPkg } from '../util'
-import { processTypeEnum, REG_STYLE, REG_TYPESCRIPT, REG_SCRIPT, REG_JSON, REG_FONT, REG_IMAGE, REG_MEDIA, CSS_EXT } from '../util/constants'
 
 let processedScriptFiles: Set<string> = new Set()
 
@@ -216,7 +230,7 @@ export function copyFileToDist (filePath: string, sourceDir: string, outputDir: 
   }))
 }
 
-export function analyzeFiles (files: string[], sourceDir: string, outputDir: string, buildData: IBuildData) {
+function _analyzeFiles(files: string[], sourceDir: string, outputDir: string, buildData: IBuildData){
   files.forEach(file => {
     if (fs.existsSync(file)) {
       if (processedScriptFiles.has(file)) {
@@ -246,13 +260,17 @@ export function analyzeFiles (files: string[], sourceDir: string, outputDir: str
         })
       }
       if (scriptFiles.length) {
-        analyzeFiles(scriptFiles, sourceDir, outputDir, buildData)
+        _analyzeFiles(scriptFiles, sourceDir, outputDir, buildData)
       }
       if (styleFiles.length) {
         analyzeStyleFilesImport(styleFiles, sourceDir, outputDir, buildData)
       }
     }
   })
+}
+
+export function analyzeFiles (files: string[], sourceDir: string, outputDir: string, buildData: IBuildData) {
+  _analyzeFiles(files, sourceDir, outputDir, buildData)
   processedScriptFiles = new Set()
 }
 

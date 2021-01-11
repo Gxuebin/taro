@@ -8,17 +8,17 @@ declare namespace Taro {
     /**
      * 监听一个事件，接受参数
      */
-    on(eventName: string | symbol, listener: (...args: any[]) => void): this
+    on(eventName: string, listener: (...args: any[]) => void): this
 
     /**
      * 添加一个事件监听，并在事件触发完成之后移除Callbacks链
      */
-    once(eventName: string | symbol, listener: (...args: any[]) => void): this
+    once(eventName: string, listener: (...args: any[]) => void): this
 
     /**
      * 取消监听一个事件
      */
-    off(eventName: string | symbol, listener?: (...args: any[]) => void): this
+    off(eventName: string, listener?: (...args: any[]) => void): this
 
     /**
      * 取消监听的所有事件
@@ -28,21 +28,21 @@ declare namespace Taro {
     /**
      * 触发一个事件，传参
      */
-    trigger(eventName: string | symbol, ...args: any[]): boolean
+    trigger(eventName: string, ...args: any[]): boolean
   }
 
   // eventCenter
 
   namespace eventCenter {
-    function on(eventName: string | symbol, listener: (...args: any[]) => void): void
+    function on(eventName: string, listener: (...args: any[]) => void): void
 
-    function once(eventName: string | symbol, listener: (...args: any[]) => void): void
+    function once(eventName: string, listener: (...args: any[]) => void): void
 
-    function off(eventName: string | symbol, listener?: (...args: any[]) => void): void
+    function off(eventName: string, listener?: (...args: any[]) => void): void
 
     function off(): void
 
-    function trigger(eventName: string | symbol, ...args: any[]): boolean
+    function trigger(eventName: string, ...args: any[]): boolean
   }
 
   // ENV_TYPE
@@ -53,10 +53,12 @@ declare namespace Taro {
     RN = 'RN',
     SWAN = 'SWAN',
     ALIPAY = 'ALIPAY',
-    TT = 'TT'
+    TT = 'TT',
+    QQ = 'QQ',
+    JD = 'JD'
   }
 
-  function getEnv(): ENV_TYPE.WEAPP | ENV_TYPE.WEB | ENV_TYPE.RN | ENV_TYPE.ALIPAY | ENV_TYPE.TT | ENV_TYPE.SWAN
+  function getEnv(): ENV_TYPE.WEAPP | ENV_TYPE.WEB | ENV_TYPE.RN | ENV_TYPE.ALIPAY | ENV_TYPE.TT | ENV_TYPE.SWAN | ENV_TYPE.QQ | ENV_TYPE.JD
 
   function render(component: Component | JSX.Element, element: Element | null): any
 

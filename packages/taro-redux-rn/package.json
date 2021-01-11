@@ -1,6 +1,6 @@
 {
   "name": "@tarojs/taro-redux-rn",
-  "version": "2.0.0",
+  "version": "2.2.16",
   "description": "taro-redux-rn",
   "main": "./src/index.js",
   "files": [
@@ -37,6 +37,6 @@
     "regenerator-runtime": "^0.12.1"
   },
   "dependencies": {
-    "react-redux": "^5.0.7"
+    "react-redux": "^7.1.0"
   }
 }

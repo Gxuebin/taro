@@ -1,41 +1,72 @@
 ---
-title: Taro.stopRecord()
+title: Taro.stopRecord(option)
 sidebar_label: stopRecord
 ---
 
+停止录音。
 
-​主动调用停止录音。
+> [参考文档](https://developers.weixin.qq.com/miniprogram/dev/api/media/recorder/wx.stopRecord.html)
 
-​## 示例代码
+## 类型
 
-```jsx
-import Taro from '@tarojs/taro'
-
-Taro.stopRecord()
+```tsx
+(option?: Option) => void
 ```
 
+## 参数
 
+### Option
 
-## API支持度
+<table>
+  <thead>
+    <tr>
+      <th>参数</th>
+      <th>类型</th>
+      <th style="text-align:center">必填</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>complete</td>
+      <td><code>(res: CallbackResult) =&gt; void</code></td>
+      <td style="text-align:center">否</td>
+      <td>接口调用结束的回调函数（调用成功、失败都会执行）</td>
+    </tr>
+    <tr>
+      <td>fail</td>
+      <td><code>(res: CallbackResult) =&gt; void</code></td>
+      <td style="text-align:center">否</td>
+      <td>接口调用失败的回调函数</td>
+    </tr>
+    <tr>
+      <td>success</td>
+      <td><code>(res: CallbackResult) =&gt; void</code></td>
+      <td style="text-align:center">否</td>
+      <td>接口调用成功的回调函数</td>
+    </tr>
+  </tbody>
+</table>
 
+## 示例代码
 
-| API | 微信小程序 | H5 | React Native | 支付宝小程序 | 百度小程序 |
-| :-: | :-: | :-: | :-: | :-: | :-: |
-| Taro.stopRecord | ✔️ |  |  |  |  |
-
-# 录音管理
-
-
-使用方式同 [`wx.getRecorderManager`](https://developers.weixin.qq.com/miniprogram/dev/api/wx.getRecorderManager.html)。
-
-**示例代码：**
-
-```jsx
-
+```tsx
+Taro.startRecord({
+  success: function (res) {
+    var tempFilePath = res.tempFilePath
+  },
+  fail: function (res) {
+     //录音失败
+  }
+})
+setTimeout(function() {
+  //结束录音
+  Taro.stopRecord()
+}, 10000)
 ```
 
-> API 支持度
+## API 支持度
 
-| API | 微信小程序 | H5 | React Native | 支付宝小程序 | 百度小程序 |
-| :-: | :-: | :-: | :-: | :-: | :-: |
-
+| API | 微信小程序 | H5 | React Native |
+| :---: | :---: | :---: | :---: |
+| Taro.stopRecord | ✔️ |  |  |

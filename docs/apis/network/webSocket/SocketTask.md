@@ -3,93 +3,524 @@ title: SocketTask
 sidebar_label: SocketTask
 ---
 
+WebSocket 任务，可通过 [Taro.connectSocket()](https://developers.weixin.qq.com/miniprogram/dev/api/network/websocket/SocketTask.html) 接口创建返回。
 
-WebSocket 任务，可通过 [wx.connectSocket()](native-api.md#taroconnectsocketobject) 接口创建返回。
+> [参考文档](https://developers.weixin.qq.com/miniprogram/dev/api/network/websocket/SocketTask.html)
 
-属性
+## 方法
 
-socketTask.readyState: WebSocket 当前的连接状态。
+<table>
+  <thead>
+    <tr>
+      <th>参数</th>
+      <th>类型</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>socketTaskId</td>
+      <td><code>number</code></td>
+      <td>websocket 当前的连接 ID。</td>
+    </tr>
+    <tr>
+      <td>readyState</td>
+      <td><code>number</code></td>
+      <td>websocket 当前的连接状态。</td>
+    </tr>
+    <tr>
+      <td>errMsg</td>
+      <td><code>string</code></td>
+      <td>websocket 接口调用结果。</td>
+    </tr>
+    <tr>
+      <td>CONNECTING</td>
+      <td><code>number</code></td>
+      <td>websocket 状态值：连接中。</td>
+    </tr>
+    <tr>
+      <td>OPEN</td>
+      <td><code>number</code></td>
+      <td>websocket 状态值：已连接。</td>
+    </tr>
+    <tr>
+      <td>CLOSING</td>
+      <td><code>number</code></td>
+      <td>websocket 状态值：关闭中。</td>
+    </tr>
+    <tr>
+      <td>CLOSED</td>
+      <td><code>number</code></td>
+      <td>websocket 状态值：已关闭。</td>
+    </tr>
+    <tr>
+      <td>ws</td>
+      <td><code>WebSocket</code></td>
+      <td>浏览器 websocket 实例。（h5 端独有）</td>
+    </tr>
+  </tbody>
+</table>
 
-socketTask.CONNECTING: WebSocket 状态值：连接中。
+### close
 
-socketTask.OPEN: WebSocket 状态值：已连接。
+关闭 WebSocket 连接
 
-socketTask.CLOSING: WebSocket 状态值：关闭中。
+> [参考文档](https://developers.weixin.qq.com/miniprogram/dev/api/network/websocket/SocketTask.close.html)
 
-socketTask.CLOSED: WebSocket 状态值：已关闭。
+```tsx
+(option: CloseOption) => void
+```
 
-socketTask.ws: 浏览器 WebSocket 实例。（**H5 端独有**）
+<table>
+  <thead>
+    <tr>
+      <th>参数</th>
+      <th>类型</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>option</td>
+      <td><code>CloseOption</code></td>
+    </tr>
+  </tbody>
+</table>
 
-方法
+#### API 支持度
 
-SocketTask.send(OBJECT)
+| API | 微信小程序 | 百度小程序 | 支付宝小程序 | H5 | React Native |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| SocketTask.close | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 
-通过 WebSocket 连接发送数据。
+### onClose
 
-**OBJECT 参数说明：**
+监听 WebSocket 连接关闭事件
 
-| 参数 | 类型 | 必填 | 说明 |
-| :-- | :-- | :-- | :-- |
-| data | String/ArrayBuffer | 是 | 需要发送的内容 |
-| success | Function | 否 | 接口调用成功的回调函数 |
-| fail | Function | 否 | 接口调用失败的回调函数 |
-| complete | Function | 否 | 接口调用结束的回调函数（调用成功、失败都会执行） |
+> [参考文档](https://developers.weixin.qq.com/miniprogram/dev/api/network/websocket/SocketTask.onClose.html)
 
-SocketTask.close(OBJECT)
+```tsx
+(callback: OnCloseCallback) => void
+```
 
-关闭 WebSocket 连接。
+<table>
+  <thead>
+    <tr>
+      <th>参数</th>
+      <th>类型</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>callback</td>
+      <td><code>OnCloseCallback</code></td>
+      <td>WebSocket 连接关闭事件的回调函数</td>
+    </tr>
+  </tbody>
+</table>
 
-**OBJECT 参数说明：**
+#### API 支持度
 
-| 参数 | 类型 | 必填 | 说明 |
-| :-- | :-- | :-- | :-- |
-| code | Number | 否 | 一个数字值表示关闭连接的状态号，表示连接被关闭的原因。如果这个参数没有被指定，默认的取值是 1000 （表示正常连接关闭） |
-| reason | String | 否 | 一个可读的字符串，表示连接被关闭的原因 |
-| success | Function | 否 | 接口调用成功的回调函数 |
-| fail | Function | 否 | 接口调用失败的回调函数 |
-| complete | Function | 否 | 接口调用结束的回调函数（调用成功、失败都会执行） |
+| API | 微信小程序 | 百度小程序 | 支付宝小程序 | H5 | React Native |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| SocketTask.onClose | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 
-SocketTask.onOpen(CALLBACK)
+### onError
 
-监听 WebSocket 连接打开事件。
+监听 WebSocket 错误事件
 
-SocketTask.onClose(CALLBACK)
+> [参考文档](https://developers.weixin.qq.com/miniprogram/dev/api/network/websocket/SocketTask.onError.html)
 
-监听 WebSocket 连接关闭事件。
+```tsx
+(callback: OnErrorCallback) => void
+```
 
-**CALLBACK 返回参数**
+<table>
+  <thead>
+    <tr>
+      <th>参数</th>
+      <th>类型</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>callback</td>
+      <td><code>OnErrorCallback</code></td>
+      <td>WebSocket 错误事件的回调函数</td>
+    </tr>
+  </tbody>
+</table>
 
-| 参数 | 类型 | 说明 |
-| :-- | :-- | :-- |
-| code | Number | 关闭连接的状态号 |
-| reason | String | 连接被关闭的原因 |
+#### API 支持度
 
-SocketTask.onError(CALLBACK)
+| API | 微信小程序 | 百度小程序 | 支付宝小程序 | H5 | React Native |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| SocketTask.onError | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 
-监听 WebSocket 错误。
+### onMessage
 
-**CALLBACK 返回参数**
+监听 WebSocket 接受到服务器的消息事件
 
-| 参数 | 类型 | 说明 |
-| :-- | :-- | :-- |
-| errMsg | String | 错误信息 |
+> [参考文档](https://developers.weixin.qq.com/miniprogram/dev/api/network/websocket/SocketTask.onMessage.html)
 
-SocketTask.onMessage(CALLBACK)
+```tsx
+<T = any>(callback: OnMessageCallback<T>) => void
+```
 
-监听 WebSocket 接受到服务器的消息事件。
+<table>
+  <thead>
+    <tr>
+      <th>参数</th>
+      <th>类型</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>callback</td>
+      <td><code>T</code></td>
+      <td>WebSocket 接受到服务器的消息事件的回调函数</td>
+    </tr>
+  </tbody>
+</table>
 
-**CALLBACK 返回参数**
+#### API 支持度
 
-| 参数 | 类型 | 说明 |
-| :-- | :-- | :-- |
-| data | String/ArrayBuffer | 服务器返回的消息 |
+| API | 微信小程序 | 百度小程序 | 支付宝小程序 | H5 | React Native |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| SocketTask.onMessage | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 
+### onOpen
 
+监听 WebSocket 连接打开事件
 
-## API支持度
+> [参考文档](https://developers.weixin.qq.com/miniprogram/dev/api/network/websocket/SocketTask.onOpen.html)
 
+```tsx
+(callback: OnOpenCallback) => void
+```
 
-| API | 微信小程序 | H5 | React Native | 支付宝小程序 | 百度小程序 |
-| :-: | :-: | :-: | :-: | :-: | :-: |
-| SocketTask | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+<table>
+  <thead>
+    <tr>
+      <th>参数</th>
+      <th>类型</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>callback</td>
+      <td><code>OnOpenCallback</code></td>
+      <td>WebSocket 连接打开事件的回调函数</td>
+    </tr>
+  </tbody>
+</table>
 
+#### API 支持度
+
+| API | 微信小程序 | 百度小程序 | 支付宝小程序 | H5 | React Native |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| SocketTask.onOpen | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+
+### send
+
+通过 WebSocket 连接发送数据
+
+> [参考文档](https://developers.weixin.qq.com/miniprogram/dev/api/network/websocket/SocketTask.send.html)
+
+```tsx
+(option: SendOption) => void
+```
+
+<table>
+  <thead>
+    <tr>
+      <th>参数</th>
+      <th>类型</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>option</td>
+      <td><code>SendOption</code></td>
+    </tr>
+  </tbody>
+</table>
+
+#### API 支持度
+
+| API | 微信小程序 | 百度小程序 | 支付宝小程序 | H5 | React Native |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| SocketTask.send | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+
+## 参数
+
+### CloseOption
+
+<table>
+  <thead>
+    <tr>
+      <th>参数</th>
+      <th>类型</th>
+      <th style="text-align:center">必填</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>code</td>
+      <td><code>number</code></td>
+      <td style="text-align:center">否</td>
+      <td>一个数字值表示关闭连接的状态号，表示连接被关闭的原因。</td>
+    </tr>
+    <tr>
+      <td>complete</td>
+      <td><code>(res: CallbackResult) =&gt; void</code></td>
+      <td style="text-align:center">否</td>
+      <td>接口调用结束的回调函数（调用成功、失败都会执行）</td>
+    </tr>
+    <tr>
+      <td>fail</td>
+      <td><code>(res: CallbackResult) =&gt; void</code></td>
+      <td style="text-align:center">否</td>
+      <td>接口调用失败的回调函数</td>
+    </tr>
+    <tr>
+      <td>reason</td>
+      <td><code>string</code></td>
+      <td style="text-align:center">否</td>
+      <td>一个可读的字符串，表示连接被关闭的原因。这个字符串必须是不长于 123 字节的 UTF-8 文本（不是字符）。</td>
+    </tr>
+    <tr>
+      <td>success</td>
+      <td><code>(res: CallbackResult) =&gt; void</code></td>
+      <td style="text-align:center">否</td>
+      <td>接口调用成功的回调函数</td>
+    </tr>
+  </tbody>
+</table>
+
+### OnCloseCallback
+
+WebSocket 连接关闭事件的回调函数
+
+```tsx
+(result: OnCloseCallbackResult) => void
+```
+
+<table>
+  <thead>
+    <tr>
+      <th>参数</th>
+      <th>类型</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>result</td>
+      <td><code>OnCloseCallbackResult</code></td>
+    </tr>
+  </tbody>
+</table>
+
+### OnCloseCallbackResult
+
+<table>
+  <thead>
+    <tr>
+      <th>参数</th>
+      <th>类型</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>code</td>
+      <td><code>number</code></td>
+      <td>一个数字值表示关闭连接的状态号，表示连接被关闭的原因。</td>
+    </tr>
+    <tr>
+      <td>reason</td>
+      <td><code>string</code></td>
+      <td>一个可读的字符串，表示连接被关闭的原因。</td>
+    </tr>
+  </tbody>
+</table>
+
+### OnErrorCallback
+
+WebSocket 错误事件的回调函数
+
+```tsx
+(result: OnErrorCallbackResult) => void
+```
+
+<table>
+  <thead>
+    <tr>
+      <th>参数</th>
+      <th>类型</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>result</td>
+      <td><code>OnErrorCallbackResult</code></td>
+    </tr>
+  </tbody>
+</table>
+
+### OnErrorCallbackResult
+
+<table>
+  <thead>
+    <tr>
+      <th>参数</th>
+      <th>类型</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>errMsg</td>
+      <td><code>string</code></td>
+      <td>错误信息</td>
+    </tr>
+  </tbody>
+</table>
+
+### OnMessageCallback
+
+WebSocket 接受到服务器的消息事件的回调函数
+
+```tsx
+(result: OnMessageCallbackResult<T>) => void
+```
+
+<table>
+  <thead>
+    <tr>
+      <th>参数</th>
+      <th>类型</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>result</td>
+      <td><code>OnMessageCallbackResult&lt;T&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
+
+### OnMessageCallbackResult
+
+<table>
+  <thead>
+    <tr>
+      <th>参数</th>
+      <th>类型</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>data</td>
+      <td><code>T</code></td>
+      <td>服务器返回的消息</td>
+    </tr>
+  </tbody>
+</table>
+
+### OnOpenCallback
+
+WebSocket 连接打开事件的回调函数
+
+```tsx
+(result: OnOpenCallbackResult) => void
+```
+
+<table>
+  <thead>
+    <tr>
+      <th>参数</th>
+      <th>类型</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>result</td>
+      <td><code>OnOpenCallbackResult</code></td>
+    </tr>
+  </tbody>
+</table>
+
+### OnOpenCallbackResult
+
+<table>
+  <thead>
+    <tr>
+      <th>参数</th>
+      <th>类型</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>header</td>
+      <td><code>Record&lt;string, any&gt;</code></td>
+      <td>连接成功的 HTTP 响应 Header</td>
+    </tr>
+  </tbody>
+</table>
+
+### SendOption
+
+<table>
+  <thead>
+    <tr>
+      <th>参数</th>
+      <th>类型</th>
+      <th style="text-align:center">必填</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>data</td>
+      <td><code>string | ArrayBuffer</code></td>
+      <td style="text-align:center">是</td>
+      <td>需要发送的内容</td>
+    </tr>
+    <tr>
+      <td>complete</td>
+      <td><code>(res: CallbackResult) =&gt; void</code></td>
+      <td style="text-align:center">否</td>
+      <td>接口调用结束的回调函数（调用成功、失败都会执行）</td>
+    </tr>
+    <tr>
+      <td>fail</td>
+      <td><code>(res: CallbackResult) =&gt; void</code></td>
+      <td style="text-align:center">否</td>
+      <td>接口调用失败的回调函数</td>
+    </tr>
+    <tr>
+      <td>success</td>
+      <td><code>(res: CallbackResult) =&gt; void</code></td>
+      <td style="text-align:center">否</td>
+      <td>接口调用成功的回调函数</td>
+    </tr>
+  </tbody>
+</table>
+
+## API 支持度
+
+| API | 微信小程序 | 百度小程序 | 支付宝小程序 | H5 | React Native |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| SocketTask.close | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| SocketTask.onClose | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| SocketTask.onError | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| SocketTask.onMessage | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| SocketTask.onOpen | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| SocketTask.send | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |

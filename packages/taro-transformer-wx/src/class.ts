@@ -32,6 +32,8 @@ const stopPropagationExpr = require('babel-template')(`typeof e === 'object' && 
 
 type ClassMethodsMap = Map<string, NodePath<t.ClassMethod | t.ClassProperty>>
 
+const NODE_MODULES = 'node_modules'
+
 function buildConstructor () {
   const ctor = t.classMethod(
     'constructor',
@@ -211,7 +213,13 @@ class Transformer {
   }
 
   setComponentPath () {
-    let componentPath = this.sourcePath.replace(this.sourceDir, '')
+    let componentPath
+    const nodeModulesIndex = this.sourcePath.indexOf(NODE_MODULES)
+    if (nodeModulesIndex >= 0) {
+      componentPath = this.sourcePath.substring(nodeModulesIndex)
+    } else {
+      componentPath = this.sourcePath.replace(this.sourceDir, '')
+    }
     componentPath = componentPath.replace(extname(componentPath), '')
     componentPath = componentPath.split(sep).join('/')
     if (componentPath.startsWith('/')) {
@@ -816,7 +824,7 @@ class Transformer {
               if (t.isJSXElement(valueAttr.value)) {
                 throw codeFrameError(valueAttr.value, 'Provider 的 value 只能传入一个字符串或普通表达式，不能传入 JSX')
               } else {
-                const value = t.isStringLiteral(valueAttr.value) ? valueAttr.value : valueAttr.value.expression
+                const value = t.isStringLiteral(valueAttr.value) ? valueAttr.value : valueAttr.value!.expression
                 const expr = t.expressionStatement(t.callExpression(
                   t.memberExpression(t.identifier(contextName), t.identifier('Provider')),
                   [value]
@@ -962,6 +970,7 @@ class Transformer {
           ))
         ]))
       this.classPath.node.body.body = this.classPath.node.body.body.concat(method)
+      // @ts-ignore
     } else if (t.isMemberExpression(expr) && !t.isThisExpression(expr.object)) {
       // @TODO: 新旧 props 系统在事件处理上耦合太深，快应用应用新 props 把旧 props 系统逻辑全部清楚
       this.buildAnonyMousFunc(path, attr, expr)

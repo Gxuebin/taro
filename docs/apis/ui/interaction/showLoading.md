@@ -1,38 +1,82 @@
 ---
-title: Taro.showLoading(OBJECT)
+title: Taro.showLoading(option)
 sidebar_label: showLoading
 ---
 
+显示 loading 提示框。需主动调用 Taro.hideLoading 才能关闭提示框
 
-显示 Loading 提示框, 需主动调用 Taro.hideLoading 才能关闭提示框，支持 `Promise` 化使用。
+**注意**
+- Taro.showLoading 和 Taro.showToast 同时只能显示一个
+- Taro.showLoading 应与 Taro.hideLoading 配对使用
 
-**OBJECT 参数说明：**
+> [参考文档](https://developers.weixin.qq.com/miniprogram/dev/api/ui/interaction/wx.showLoading.html)
 
-| 参数 | 类型 | 必填 | 说明 |
-| :-- | :-- | :-- | :-- |
-| title | String | 是 | 提示的内容 |
-| mask | Boolean | 否 | 是否显示透明蒙层，防止触摸穿透，默认：false |
-| success | Function | 否 | 接口调用成功的回调函数 |
-| fail | Function | 否 | 接口调用失败的回调函数 |
-| complete | Function | 否 | 接口调用结束的回调函数（调用成功、失败都会执行） |
+## 类型
+
+```tsx
+(option: Option) => Promise<CallbackResult>
+```
+
+## 参数
+
+### Option
+
+<table>
+  <thead>
+    <tr>
+      <th>参数</th>
+      <th>类型</th>
+      <th style="text-align:center">必填</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>title</td>
+      <td><code>string</code></td>
+      <td style="text-align:center">是</td>
+      <td>提示的内容</td>
+    </tr>
+    <tr>
+      <td>complete</td>
+      <td><code>(res: CallbackResult) =&gt; void</code></td>
+      <td style="text-align:center">否</td>
+      <td>接口调用结束的回调函数（调用成功、失败都会执行）</td>
+    </tr>
+    <tr>
+      <td>fail</td>
+      <td><code>(res: CallbackResult) =&gt; void</code></td>
+      <td style="text-align:center">否</td>
+      <td>接口调用失败的回调函数</td>
+    </tr>
+    <tr>
+      <td>mask</td>
+      <td><code>boolean</code></td>
+      <td style="text-align:center">否</td>
+      <td>是否显示透明蒙层，防止触摸穿透</td>
+    </tr>
+    <tr>
+      <td>success</td>
+      <td><code>(res: CallbackResult) =&gt; void</code></td>
+      <td style="text-align:center">否</td>
+      <td>接口调用成功的回调函数</td>
+    </tr>
+  </tbody>
+</table>
 
 ## 示例代码
 
-```jsx
-import Taro from '@tarojs/taro'
-
+```tsx
 Taro.showLoading({
-  title: 'loading'
+  title: '加载中',
 })
-  .then(res => console.log(res))
+setTimeout(function () {
+  Taro.hideLoading()
+}, 2000)
 ```
 
-
-
-## API支持度
-
+## API 支持度
 
 | API | 微信小程序 | H5 | React Native |
-| :-: | :-: | :-: | :-: |
+| :---: | :---: | :---: | :---: |
 | Taro.showLoading | ✔️ | ✔️ | ✔️ |
-

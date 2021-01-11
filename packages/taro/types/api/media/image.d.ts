@@ -152,6 +152,10 @@ declare namespace Taro {
       album
       /** 使用相机 */
       camera
+      /** 使用前置摄像头(仅H5纯浏览器使用) */
+      user
+      /** 使用后置摄像头(仅H5纯浏览器) */
+      environment
     }
     interface SuccessCallbackResult extends General.CallbackResult {
       /** 图片的本地临时文件路径列表 */
@@ -185,7 +189,7 @@ declare namespace Taro {
    * Taro.chooseImage({
    *   count: 1, // 默认9
    *   sizeType: ['original', 'compressed'], // 可以指定是原图还是压缩图，默认二者都有
-   *   sourceType: ['album', 'camera'], // 可以指定来源是相册还是相机，默认二者都有
+   *   sourceType: ['album', 'camera'], // 可以指定来源是相册还是相机，默认二者都有，在H5浏览器端支持使用 `user` 和 `environment`分别指定为前后摄像头
    *   success: function (res) {
    *     // 返回选定照片的本地文件路径列表，tempFilePath可以作为img标签的src属性显示图片
    *     var tempFilePaths = res.tempFilePaths
@@ -298,5 +302,84 @@ declare namespace Taro {
    * ```
    * @see https://developers.weixin.qq.com/miniprogram/dev/api/media/image/wx.chooseMessageFile.html
    */
-  function chooseMessageFile(option: chooseMessageFile.Option): Promise<compressImage.SuccessCallbackResult>
+  function chooseMessageFile(option: chooseMessageFile.Option): Promise<chooseMessageFile.SuccessCallbackResult>
+
+  namespace chooseMedia {
+    interface Option {
+      /** 最多可以选择的文件个数 */
+      count?: number
+      /** 文件类型 */
+      mediaType?: Array<keyof mediaType>
+      /** 图片和视频选择的来源 */
+      sourceType?: Array<keyof sourceType>
+      /** 拍摄视频最长拍摄时间，单位秒。时间范围为 3s 至 30s 之间 */
+      maxDuration?: number
+      /** 仅对 mediaType 为 image 时有效，是否压缩所选文件 */
+      sizeType?: Array<'original' | 'compressed'>
+      /** 仅在 sourceType 为 camera 时生效，使用前置或后置摄像头 */
+      camera?: string
+      /** 接口调用失败的回调函数 */
+      fail?: (res: General.CallbackResult) => void
+      /** 接口调用成功的回调函数 */
+      success?: (result: SuccessCallbackResult) => void
+    }
+    interface SuccessCallbackResult extends General.CallbackResult {
+      /** 本地临时文件列表 */
+      tempFiles: ChooseMedia[]
+      /** 文件类型，有效值有 image 、video */
+      type: string
+    }
+    /** 本地临时文件列表 */
+    interface ChooseMedia {
+      /** 本地临时文件路径 (本地路径) */
+      tempFilePath: string
+      /** 本地临时文件大小，单位 B */
+      size: number
+      /** 视频的时间长度 */
+      duration: number
+      /** 视频的高度 */
+      height: number
+      /** 视频的宽度 */
+      width: number
+      /** 视频缩略图临时文件路径 */
+      thumbTempFilePath: string
+    }
+    interface mediaType {
+      /** 只能拍摄视频或从相册选择视频 */
+      video
+      /** 只能拍摄图片或从相册选择图片 */
+      image
+    }
+    interface sourceType {
+      /** 从相册选择 */
+      album
+      /** 使用相机拍摄 */
+      camera
+    }
+    interface camera {
+      /** 使用后置摄像头 */
+      back
+      /** 使用前置摄像头 */
+      front
+    }
+  }
+  /** 拍摄或从手机相册中选择图片或视频。
+   * @supported weapp, rn
+   * @example
+   * ```tsx
+   * Taro.chooseMedia({
+   *   count: 9,
+   *   mediaType: ['image','video'],
+   *   sourceType: ['album', 'camera'],
+   *   maxDuration: 30,
+   *   camera: 'back',
+   *   success: (res) => {
+   *     console.log(res.tempFiles)
+   *     console.log(res.type)
+   *   }
+   * })
+   * ```
+   * @see https://developers.weixin.qq.com/miniprogram/dev/api/media/video/wx.chooseMedia.html
+   */
+  function chooseMedia(option: chooseMedia.Option): Promise<chooseMedia.SuccessCallbackResult>
 }

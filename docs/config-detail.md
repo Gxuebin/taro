@@ -16,36 +16,49 @@ title: 编译配置详情
 
 ## plugins
 
-`plugins` 用来设置编译过程插件，插件机制基于 实现，目前暴露了两个钩子 `beforeBuild` 和 `afterBuild`
+> 自 2.2 开始，Taro 引入了插件化机制，允许开发者通过编写插件的方式来为 Taro 拓展更多功能或者为自身业务定制个性化功能
 
-其中，`beforeBuild` 将在整体编译前触发，可以获取到编译的相关配置，同时也能进行修改
+`plugins` 用来配置 Taro 插件。
 
-`afterBuild` 将在 webpack 编译完后执行，可以获取到编译后的结果
-
-具体使用方式如下：
-
-首先定义一个插件
+`plugins` 字段取值为一个数组，配置方式如下：
 
 ```js
-class BuildPlugin {
-  apply (builder) {
-    builder.hooks.beforeBuild.tap('BuildPlugin', (config) => {
-      console.log(config)
-    })
-
-    builder.hooks.afterBuild.tap('BuildPlugin', (stats) => {
-      console.log(stats)
-    })
-  }
+const config = {
+  plugins: [
+    // 引入 npm 安装的插件
+    '@tarojs/plugin-mock',
+    // 引入 npm 安装的插件，并传入插件参数
+    ['@tarojs/plugin-mock', {
+      mocks: {
+        '/api/user/1': {
+          name: 'judy',
+          desc: 'Mental guy'
+        }
+      }
+    }],
+    // 从本地绝对路径引入插件，同样如果需要传入参数也是如上
+    '/absulute/path/plugin/filename',
+  ]
 }
 ```
 
-接下来在 `plugins` 字段中进行配置
+## presets
+
+如果你有一系列插件需要配置，而他们通常是组合起来完成特定的事儿，那你可以通过**插件集** `presets` 来进行配置。
+
+配置[编译配置](./config-detail.md)中的 `presets` 字段，如下。
 
 ```js
-{
-  plugins: [
-    new BuildPlugin()
+const config = {
+  presets: [
+    // 引入 npm 安装的插件集
+    '@tarojs/preset-sth', 
+    // 引入 npm 安装的插件集，并传入插件参数
+    ['@tarojs/plugin-sth', {
+      arg0: 'xxx'
+    }],
+    // 从本地绝对路径引入插件集，同样如果需要传入参数也是如上
+    '/absulute/path/preset/filename',
   ]
 }
 ```
@@ -274,11 +287,53 @@ copy: {
 
 专属于小程序的配置。
 
+### mini.compile
+
+小程序编译过程的相关配置。
+
+#### mini.compile.exclude
+
+配置小程序编译过程中排除不需要经过 Taro 编译的文件，数组类型，数组里面可以包含具体文件路径，也可以是判断函数，同 [Rule.exclude](https://webpack.js.org/configuration/module/#ruleexclude)
+
+例如，想要排除某个文件，可以如下配置要排除的文件具体路径：
+
+```js
+const config = {
+  mini: {
+    compile: {
+      exclude: [
+        path.resolve(__dirname, '..', 'src/pages/index/vod-wx-sdk-v2.js')
+      ]
+    }
+  }
+}
+```
+
+也可以配置判断函数，如下
+
+```js
+const config = {
+  mini: {
+    compile: {
+      exclude: [
+        function (modulePath) {
+          return modulePath.indexOf('vod-wx-sdk-v2') >= 0
+        }
+      ]
+    }
+  }
+}
+```
+
+#### mini.compile.incldue
+
+配置额外需要经过 Taro 编译的文件，例如 Taro 默认不编译 `node_modules` 包中文件，可以通过这个配置让 Taro 编译  `node_modules` 包中文件，使用方式与 `mini.compile.exclude` 一致，同 [Rule.include](https://webpack.js.org/configuration/module/#ruleinclude)。
+
 ### mini.webpackChain
 
 自定义 Webpack 配置，接受函数形式的配置。
 
-这个函数会收到两个参数，第一个参数是 webpackChain 对象，可参考 [webpack-chain](https://github.com/neutrinojs/webpack-chain) 的 api 进行修改；第二个参数是 `webpack` 实例。例如：
+这个函数会收到三个参数，第一个参数是 webpackChain 对象，可参考 [webpack-chain](https://github.com/neutrinojs/webpack-chain) 的 api 进行修改；第二个参数是 `webpack` 实例；第三个参数 `PARSE_AST_TYPE` 是小程序编译时的文件类型集合。例如：
 
 ```jsx
 // 这是一个添加 raw-loader 的例子，用于在项目中直接引用 md 文件
@@ -286,7 +341,7 @@ copy: {
   webpackChain (chain, webpack) {
     chain.merge({
       module: {
-        rule: {
+        rules: {
           myloader: {
             test: /\.md$/,
             use: [{
@@ -326,9 +381,54 @@ copy: {
 }
 ```
 
+注意：第三个参数的取值如下
+
+```typescript
+export enum PARSE_AST_TYPE {
+  ENTRY = 'ENTRY',
+  PAGE = 'PAGE',
+  COMPONENT = 'COMPONENT',
+  NORMAL = 'NORMAL',
+  STATIC = 'STATIC'
+}
+```
+
 #### mini.commonChunks
 
-配置打包时抽离的公共文件，如果是普通编译，则默认值为 `['runtime', 'vendors']`，如果是编译为微信小程序插件，则默认值为 `['plugin/runtime', 'plugin/vendors']`。
+> `type commonChunks = string[] | ((commonChunks: string[]) => string[])`
+
+配置打包时抽离的公共文件
+
+支持两种配置方式，其一是字符串数组，给定抽离公共文件名，在 Taro 编译中，如果是普通编译，则 commonChunks 默认值为 `['runtime', 'vendors', 'taro', 'common']`，如果是编译为微信小程序插件，则 commonChunks 默认值为 `['plugin/runtime', 'plugin/vendors', 'plugin/taro', 'plugin/common']`，普通编译时默认配置
+
+```js
+const config = {
+  mini: {
+    commonChunks: ['runtime', 'vendors', 'taro', 'common']
+  }
+}
+```
+
+这几个公共文件分别表示：
+
+* `runtime`: webpack 运行时入口
+* `vendors`: node_modules 中文件抽离
+* `taro`: node_modules 中 Taro 相关依赖抽离
+* `common`: 项目中业务代码公共文件抽离
+
+其二是函数，通过对入参的默认公共文件数组进行操作，返回新的数组来进行配置，如下
+
+```js
+const config = {
+  mini: {
+    commonChunks (commonChunks) {
+      // commonChunks 的取值即为默认的公共文件名数组
+      commonChunks.push('yourCustomCommonChunkName')
+      return commonChunks
+    }
+  }
+}
+```
 
 `commonChunks` 的配置值主要依据 webpack 配置 [`optimization.runtimeChunk`](https://webpack.js.org/configuration/optimization/#optimizationruntimechunk) 和 [`optimization.splitChunks`](https://webpack.js.org/plugins/split-chunks-plugin/)，Taro 中默认的配置分别为
 
@@ -344,10 +444,28 @@ optimization: {
     minSize: 0,
     name: 'vendors',
     cacheGroups: {
+      common: {
+        name: !!config.isBuildPlugin ? 'plugin/common' : 'common',
+        minChunks: 2,
+        priority: 1
+      },
       vendors: {
-        test (module) {
+        name: !!config.isBuildPlugin ? 'plugin/vendors' : 'vendors',
+        minChunks: 2,
+        test: module => {
+          // 如果需要自定义配置，PARSE_AST_TYPE 可以从 webpackChain 第三个参数获得
           return /[\\/]node_modules[\\/]/.test(module.resource) && module.miniType !== PARSE_AST_TYPE.COMPONENT
-        }
+        },
+        priority: 10
+      },
+      taro: {
+        name: !!config.isBuildPlugin ? 'plugin/taro' : 'taro',
+        test: module => {
+          // buildAdapter 为当前编译的端，在配置文件中可以通过 process.env.TARO_ENV 来获取
+          const taroBaseReg = new RegExp(`@tarojs[\\/]taro|@tarojs[\\/]${buildAdapter}`)
+          return taroBaseReg.test(module.context)
+        },
+        priority: 100
       }
     }
   }
@@ -355,6 +473,30 @@ optimization: {
 ```
 
 如果有自行拆分公共文件的需求，请先通过 `webpackChain` 配置覆盖 `optimization.runtimeChunk` 与 `optimization.splitChunks` 配置，再通过 `commonChunks` 配置指定的公共入口文件。
+
+### mini.addChunkPages
+
+> 2.0.5 开始支持
+> `type addChunkPages = ((pages: Map<string, string[]>, pagesNames?: string[]) => void)`
+
+在某些情况下，我们可能需要为某些页面单独指定需要引用的公共文件，例如，使用小程序分包的时候，为了减少主包大小，分包的页面希望引入自己的公共文件，而不希望直接放在主包内，那么我们首先可以通过配置 `mini.webpackChain` 来单独抽离分包的公共文件，然后通过 `mini.addChunkPages` 为分包页面配置引入子包公共文件，其使用方式如下：
+
+`mini.addChunkPages` 配置为一个函数，接受两个参数
+
+* `pages` 参数为 Map 类型，用于为页面添加公共文件
+* `pagesNames` 参数为当前应用的所有页面标识列表，可以通过打印的方式进行查看页面的标识
+
+例如，为 `pages/index/index` 页面添加 `eating` 和 `morning` 两个抽离的公共文件
+
+```js
+const config = {
+  mini: {
+    addChunkPages (pages, pagesNames) {
+      pages.set('pages/index/index', ['eating', 'morning'])
+    }
+  }
+}
+```
 
 ### mini.cssLoaderOption
 
@@ -653,30 +795,6 @@ dev 状态默认 **开**，prod 状态默认 **关**。
 ### h5.sourceMapType
 sourceMap格式, 默认cheap-module-eval-source-map。[具体配置](https://webpack.js.org/configuration/devtool/#devtool)
 
-### h5.enableDll
-
-dll 开关，开启后将使用 `dllPlugin` 把内置的部分依赖库打包为单独的 dll 文件，
-某种程度上可以减少首屏单个文件体积。
-dev 状态默认 **关**，prod 状态默认 **开**。
-
-### h5.dllWebpackChain
-
-同 `h5.webpackChain`，不过作用于 dll。
-
-### h5.dllEntry
-
-dll编译过程的 `entry` 配置项，决定了 dll 文件的内容，可参考 [webpack.entry](https://webpack.js.org/configuration/entry-context/#entry)。默认值：
-
-```js
-h5: {
-  /* 其他配置 */
-  ...,
-  dllEntry: {
-    lib: ['nervjs', '@tarojs/taro-h5', '@tarojs/router', '@tarojs/components']
-  }
-}
-```
-
 ### h5.enableExtract
 
 extract 功能开关，开启后将使用 `mini-css-extract-plugin` 分离 css 文件，
@@ -827,6 +945,244 @@ postcss: {
     enable: false, // 默认为 false，如需使用 css modules 功能，则设为 true
     config: {
       namingPattern: 'module',
+      generateScopedName: '[name]__[local]___[hash:base64:5]'
+    }
+  }
+}
+```
+
+## rn
+
+专属于 RN 的配置。
+
+### rn.appJSON
+
+React Native 的 app.json 配置。
+
+### rn.compile
+
+RN 编译过程的相关配置。
+
+#### rn.compile.exclude
+
+配置 RN 编译过程中排除不需要经过 Taro 编译的文件，数组类型，数组里面可以包含具体文件路径，也可以是判断函数，同 [Rule.exclude](https://webpack.js.org/configuration/module/#ruleexclude)
+
+例如，想要排除某个文件，可以如下配置要排除的文件具体路径：
+
+```js
+const config = {
+  rn: {
+    compile: {
+      exclude: [
+        path.resolve(__dirname, '..', 'src/pages/index/vod-wx-sdk-v2.js')
+      ]
+    }
+  }
+}
+```
+
+也可以配置判断函数，如下
+
+```js
+const config = {
+  rn: {
+    compile: {
+      exclude: [
+        function (modulePath) {
+          return modulePath.indexOf('vod-wx-sdk-v2') >= 0
+        }
+      ]
+    }
+  }
+}
+```
+
+#### rn.compile.include
+
+配置额外需要经过 Taro 编译的文件，例如 Taro 默认不编译 `node_modules` 包中文件，可以通过这个配置让 Taro 编译  `node_modules` 包中文件，使用方式与 `rn.compile.exclude` 一致，同 [Rule.include](https://webpack.js.org/configuration/module/#ruleinclude)。
+
+### mini.webpackChain
+
+自定义 Webpack 配置，接受函数形式的配置。
+
+这个函数会收到三个参数，第一个参数是 webpackChain 对象，可参考 [webpack-chain](https://github.com/neutrinojs/webpack-chain) 的 api 进行修改；第二个参数是 `webpack` 实例；第三个参数 `PARSE_AST_TYPE` 是小程序编译时的文件类型集合。例如：
+
+```jsx
+// 这是一个添加 raw-loader 的例子，用于在项目中直接引用 md 文件
+{
+  webpackChain (chain, webpack) {
+    chain.merge({
+      module: {
+        rule: {
+          myloader: {
+            test: /\.md$/,
+            use: [{
+              loader: 'raw-loader',
+              options: {}
+            }]
+          }
+        }
+      }
+    })
+  }
+}
+```
+
+```jsx
+// 这是一个添加插件的例子
+{
+  webpackChain (chain, webpack) {
+    chain.merge({
+      plugin: {
+        install: {
+          plugin: require('npm-install-webpack-plugin'),
+          args: [{
+            // Use --save or --save-dev
+            dev: false,
+            // Install missing peerDependencies
+            peerDependencies: true,
+            // Reduce amount of console logging
+            quiet: false,
+            // npm command used inside company, yarn is not supported yet
+            npm: 'cnpm'
+          }]
+        }
+      }
+    })
+  }
+}
+```
+
+注意：第三个参数的取值如下
+
+```typescript
+export enum PARSE_AST_TYPE {
+  ENTRY = 'ENTRY',
+  PAGE = 'PAGE',
+  COMPONENT = 'COMPONENT',
+  NORMAL = 'NORMAL',
+  STATIC = 'STATIC'
+}
+```
+
+### mini.cssLoaderOption
+
+css-loader 的附加配置。配置项参考[官方文档](https://github.com/webpack-contrib/css-loader)，例如：
+
+```jsx
+{
+  cssLoaderOption: {
+    localIdentName: '[hash:base64]'
+  }
+}
+```
+
+### mini.styleLoaderOption
+
+style-loader 的附加配置。配置项参考[官方文档](https://github.com/webpack-contrib/style-loader)，例如：
+
+```jsx
+{
+  styleLoaderOption: {
+    insertAt: 'top'
+  }
+}
+```
+
+### mini.sassLoaderOption
+
+sass-loader 的附加配置。配置项参考[官方文档](https://github.com/webpack-contrib/sass-loader)，例如：
+
+```jsx
+{
+  sassLoaderOption: {
+    implementation: require("dart-sass")
+  }
+}
+```
+
+### mini.lessLoaderOption
+
+less-loader 的附加配置。配置项参考[官方文档](https://github.com/webpack-contrib/less-loader)，例如：
+
+```jsx
+{
+  lessLoaderOption: {
+    strictMath: true,
+    noIeCompat: true
+  }
+}
+```
+
+### mini.stylusLoaderOption
+
+stylus-loader 的附加配置。配置项参考[官方文档](https://github.com/shama/stylus-loader)。
+
+### mini.mediaUrlLoaderOption
+
+针对 `mp4 | webm | ogg | mp3 | wav | flac | aac` 文件的 url-loader 配置。配置项参考[官方文档](https://github.com/webpack-contrib/url-loader)，例如：
+
+```jsx
+{
+  mediaUrlLoaderOption: {
+    limit: 8192
+  }
+}
+```
+
+### mini.fontUrlLoaderOption
+
+针对 `woff | woff2 | eot | ttf | otf` 文件的 url-loader 配置。配置项参考[官方文档](https://github.com/webpack-contrib/url-loader)。
+
+### mini.imageUrlLoaderOption
+
+针对 `png | jpg | jpeg | gif | bpm | svg` 文件的 url-loader 配置。配置项参考[官方文档](https://github.com/webpack-contrib/url-loader)。
+
+### mini.miniCssExtractPluginOption
+
+`mini-css-extract-plugin` 的附加配置，在 `enableExtract` 为 `true` 的情况下生效。
+配置项参考[官方文档](https://github.com/webpack-contrib/mini-css-extract-plugin)，例如：
+
+```jsx
+{
+  miniCssExtractPluginOption: {
+    filename: '[name].css',
+    chunkFilename: '[name].css'
+  }
+}
+```
+
+### mini.postcss
+
+配置 `postcss` 相关插件：
+
+```jsx
+postcss: {
+  // 可以进行 autoprefixer 的配置。配置项参考官方文档 https://github.com/postcss/autoprefixer
+  autoprefixer: {
+    enable: true,
+    config: {
+      // autoprefixer 配置项
+    }
+  },
+  pxtransform: {
+    enable: true,
+    config: {
+      // pxtransform 配置项，参考尺寸章节
+      selectorBlackList: ['body']
+    }
+  },
+  // 小程序端样式引用本地资源内联
+  url: {
+    enable: true,
+    config: {
+      limit: 10240 // 设定转换尺寸上限
+    }
+  },
+  // css modules 功能开关与相关配置
+  cssModules: {
+    enable: false, // 默认为 false，如需使用 css modules 功能，则设为 true
+    config: {
       generateScopedName: '[name]__[local]___[hash:base64:5]'
     }
   }

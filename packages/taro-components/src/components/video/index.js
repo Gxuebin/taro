@@ -2,13 +2,14 @@
  * Video组件的样式参考了[uni-app](https://github.com/dcloudio/uni-app/tree/master/packages/uni-h5)的实现
  */
 
+import Taro from '@tarojs/taro-h5'
 import Nerv, { Component, createPortal } from 'nervjs'
 import classnames from 'classnames'
 import Danmu from './danmu'
 import Controls from './controls'
 import { formatTime, calcDist, normalizeNumber } from './utils'
 
-import './style/index.scss'
+import './style/index.css'
 import 'weui'
 
 /**
@@ -82,9 +83,6 @@ class Video extends Component {
     vslideGesture: false,
     vslideGestureInFullscreen: true
   }
-
-  /** @type {VideoProps} */
-  props
 
   /** @type {HTMLVideoElement} */
   videoRef
@@ -210,11 +208,11 @@ class Video extends Component {
   }
 
   onLoadedMetadata = e => {
-    if (this.props.poster) return
     this.setState({
       duration: this.videoRef.duration
     })
     this.duration = this.videoRef.duration
+    if (this.props.poster) return
     if (this.state.isFirst) {
       this.seek(this.props.initialTime)
     }
@@ -412,6 +410,12 @@ class Video extends Component {
   componentDidMount () {
     this.unbindTouchEvents = this.bindTouchEvents()
     this.sendDanmu(this.props.danmuList)
+
+    Taro.eventCenter.on('__taroRouterChange', () => {
+      if (this.state.isPlaying) {
+        this.stop()
+      }
+    })
   }
 
   componentWillReceiveProps (nProps) {
@@ -479,7 +483,18 @@ class Video extends Component {
         onTouchStart={this.onTouchStartContainer}
         onClick={this.onClickContainer}>
         <video {...videoProps}>暂时不支持播放该视频</video>
-        <Controls controls={controls} currentTime={this.currentTime} duration={this.props.duration || this.state.duration || null} isPlaying={this.state.isPlaying} pauseFunc={this.pause} playFunc={this.play} seekFunc={this.seek} showPlayBtn={showPlayBtn} showProgress={showProgress} ref={this.getControlsRef}>
+        <Controls
+          controls={controls}
+          currentTime={this.currentTime}
+          duration={this.props.duration || this.state.duration || null}
+          isPlaying={this.state.isPlaying}
+          pauseFunc={this.pause}
+          playFunc={this.play}
+          seekFunc={this.seek}
+          showPlayBtn={showPlayBtn}
+          showProgress={showProgress}
+          ref={this.getControlsRef}
+        >
           {showMuteBtn && (
             <div
               className={classnames('taro-video-mute', {

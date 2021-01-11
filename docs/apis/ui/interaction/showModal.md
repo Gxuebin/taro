@@ -1,52 +1,145 @@
 ---
-title: Taro.showModal(OBJECT)
+title: Taro.showModal(option)
 sidebar_label: showModal
 ---
 
+显示模态对话框
+**注意**
+- Android 6.7.2 以下版本，点击取消或蒙层时，回调 fail, errMsg 为 "fail cancel"；
+- Android 6.7.2 及以上版本 和 iOS 点击蒙层不会关闭模态弹窗，所以尽量避免使用「取消」分支中实现业务逻辑
 
-​显示模态弹窗，支持 `Promise` 化使用。
+> [参考文档](https://developers.weixin.qq.com/miniprogram/dev/api/ui/interaction/wx.showModal.html)
 
-**OBJECT 参数说明：**
+## 类型
 
-| 参数 | 类型 | 必填 | 说明 |
-| :-- | :-- | :-- | :-- |
-| title | String | 是 | 提示的标题 |
-| content | String | 是 | 提示的内容 |
-| showCancel | Boolean | 否 | 是否显示取消按钮，默认为 true |
-| cancelText | String | 否 | 取消按钮的文字，默认为"取消"，最多 4 个字符 |
-| cancelColor | HexColor | 否 | 取消按钮的文字颜色，默认为"#000000" |
-| confirmText | String | 否 | 确定按钮的文字，默认为"确定"，最多 4 个字符 |
-| confirmColor | HexColor | 否 | 确定按钮的文字颜色，默认为"#3CC51F" |
-| success | Function | 否 | 接口调用成功的回调函数 |
-| fail | Function | 否 | 接口调用失败的回调函数 |
-| complete | Function | 否 | 接口调用结束的回调函数（调用成功、失败都会执行） |
+```tsx
+(option: Option) => Promise<SuccessCallbackResult>
+```
 
-**success 返回参数说明：**
+## 参数
 
-| 参数值 | 类型 | 说明 |
-| :-- | :-- | :-- |
-| confirm | Boolean | 为 true 时，表示用户点击了确定按钮 |
-| cancel | Boolean | 为 true 时，表示用户点击了取消 |
+### Option
+
+<table>
+  <thead>
+    <tr>
+      <th>参数</th>
+      <th>类型</th>
+      <th style="text-align:center">必填</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>cancelColor</td>
+      <td><code>string</code></td>
+      <td style="text-align:center">否</td>
+      <td>取消按钮的文字颜色，必须是 16 进制格式的颜色字符串</td>
+    </tr>
+    <tr>
+      <td>cancelText</td>
+      <td><code>string</code></td>
+      <td style="text-align:center">否</td>
+      <td>取消按钮的文字，最多 4 个字符</td>
+    </tr>
+    <tr>
+      <td>complete</td>
+      <td><code>(res: CallbackResult) =&gt; void</code></td>
+      <td style="text-align:center">否</td>
+      <td>接口调用结束的回调函数（调用成功、失败都会执行）</td>
+    </tr>
+    <tr>
+      <td>confirmColor</td>
+      <td><code>string</code></td>
+      <td style="text-align:center">否</td>
+      <td>确认按钮的文字颜色，必须是 16 进制格式的颜色字符串</td>
+    </tr>
+    <tr>
+      <td>confirmText</td>
+      <td><code>string</code></td>
+      <td style="text-align:center">否</td>
+      <td>确认按钮的文字，最多 4 个字符</td>
+    </tr>
+    <tr>
+      <td>content</td>
+      <td><code>string</code></td>
+      <td style="text-align:center">否</td>
+      <td>提示的内容</td>
+    </tr>
+    <tr>
+      <td>fail</td>
+      <td><code>(res: CallbackResult) =&gt; void</code></td>
+      <td style="text-align:center">否</td>
+      <td>接口调用失败的回调函数</td>
+    </tr>
+    <tr>
+      <td>showCancel</td>
+      <td><code>boolean</code></td>
+      <td style="text-align:center">否</td>
+      <td>是否显示取消按钮</td>
+    </tr>
+    <tr>
+      <td>success</td>
+      <td><code>(result: SuccessCallbackResult) =&gt; void</code></td>
+      <td style="text-align:center">否</td>
+      <td>接口调用成功的回调函数</td>
+    </tr>
+    <tr>
+      <td>title</td>
+      <td><code>string</code></td>
+      <td style="text-align:center">否</td>
+      <td>提示的标题</td>
+    </tr>
+  </tbody>
+</table>
+
+### SuccessCallbackResult
+
+<table>
+  <thead>
+    <tr>
+      <th>参数</th>
+      <th>类型</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>cancel</td>
+      <td><code>boolean</code></td>
+      <td>为 true 时，表示用户点击了取消（用于 Android 系统区分点击蒙层关闭还是点击取消按钮关闭）</td>
+    </tr>
+    <tr>
+      <td>confirm</td>
+      <td><code>boolean</code></td>
+      <td>为 true 时，表示用户点击了确定按钮</td>
+    </tr>
+    <tr>
+      <td>errMsg</td>
+      <td><code>string</code></td>
+      <td>调用结果</td>
+    </tr>
+  </tbody>
+</table>
 
 ## 示例代码
 
-```jsx
-import Taro from '@tarojs/taro'
-
-// 注意：无论用户点击确定还是取消，Promise 都会 resolve。
+```tsx
 Taro.showModal({
-  title: 'xxx',
-  content: 'hello world',
+  title: '提示',
+  content: '这是一个模态弹窗',
+  success: function (res) {
+    if (res.confirm) {
+      console.log('用户点击确定')
+    } else if (res.cancel) {
+      console.log('用户点击取消')
+    }
+  }
 })
-  .then(res => console.log(res.confirm, res.cancel))
 ```
 
-
-
-## API支持度
-
+## API 支持度
 
 | API | 微信小程序 | H5 | React Native |
-| :-: | :-: | :-: | :-: |
+| :---: | :---: | :---: | :---: |
 | Taro.showModal | ✔️ | ✔️ | ✔️ |
-

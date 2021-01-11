@@ -30,7 +30,8 @@ import {
   setAncestorCondition,
   replaceJSXTextWithTextComponent,
   createRandomLetters,
-  isDerivedFromProps
+  isDerivedFromProps,
+  generateMemberExpressionArray
 } from './utils'
 import { difference, get as safeGet, cloneDeep, uniq, snakeCase } from 'lodash'
 import {
@@ -686,7 +687,7 @@ export class RenderParser {
 
         const blockAttrs: t.JSXAttribute[] = []
         if ((isNewPropsSystem()) && !this.finalReturnElement && process.env.NODE_ENV !== 'test') {
-          if (this.isDefaultRender) {
+          if (this.isDefaultRender && Adapter.type !== Adapters.swan) {
             blockAttrs.push(t.jSXAttribute(
               t.jSXIdentifier(Adapter.if),
               t.jSXExpressionContainer(t.jSXIdentifier(IS_TARO_READY))
@@ -991,6 +992,7 @@ export class RenderParser {
     const properties: Array<t.ObjectProperty | t.SpreadProperty> = []
     openingElement.attributes = attrs.filter(attr => {
       if (t.isJSXSpreadAttribute(attr)) {
+        // @ts-ignore
         properties.push(t.spreadProperty(attr.argument))
         return false
       } else if (t.isJSXAttribute(attr)) {
@@ -1041,7 +1043,7 @@ export class RenderParser {
       return
     }
     if (this.isInternalComponent(openingElement)) {
-      if (this.isEmptyProps(openingElement.attributes)) {
+      if (this.isEmptyProps(openingElement.attributes) && Adapter.type !== Adapters.swan) {
         return
       }
       const compId = genCompid()
@@ -1221,7 +1223,7 @@ export class RenderParser {
             return false
           }) as NodePath<t.JSXElement>
           if (loopBlock) {
-            setJSXAttr(loopBlock.node, Adapter.key, value)
+            setJSXAttr(loopBlock.node, Adapter.key, value!)
             path.remove()
           } else {
             path.get('name').replaceWith(t.jSXIdentifier(Adapter.key))
@@ -1511,12 +1513,15 @@ export class RenderParser {
           const { properties } = id.node
           for (const p of properties) {
             if (t.isIdentifier(p)) {
+              // @ts-ignore
               if (this.initState.has(p.name)) {
                 // tslint:disable-next-line
                 console.log(codeFrameError(id.node, errMsg).message)
               }
             }
+            // @ts-ignore
             if (t.isSpreadProperty(p) && t.isIdentifier(p.argument)) {
+              // @ts-ignore
               if (this.initState.has(p.argument.name)) {
                 // tslint:disable-next-line
                 console.log(codeFrameError(id.node, errMsg).message)
@@ -1855,7 +1860,7 @@ export class RenderParser {
           JSXElement: path => {
             const element = path.node.openingElement
             if (this.isInternalComponent(element)) {
-              if (this.isEmptyProps(element.attributes)) {
+              if (this.isEmptyProps(element.attributes) && Adapter.type !== Adapters.swan) {
                 return
               }
 
@@ -2139,6 +2144,19 @@ export class RenderParser {
                   forExpr = `(${indexName}, ${itemName}) in ${stateName}`
                 }
                 setJSXAttr(component.node, Adapter.for, t.stringLiteral(`{{${forExpr}}}`))
+              }
+            } else if (Adapters.swan === Adapter.type) {
+              const attributes = component.node.openingElement.attributes
+              const keyAttribute: t.JSXAttribute | undefined = attributes.find(a => t.isJSXIdentifier(a.name, { name: 'key' }))
+              if (keyAttribute && t.isJSXExpressionContainer(keyAttribute.value)) {
+                let itemName = itemId!.name
+                const expressionArray = generateMemberExpressionArray(keyAttribute.value.expression as t.MemberExpression)
+                expressionArray[0] = itemName // 将key属性的值MemberExpression的首位（对象）替换成forItem
+                const memberExpressionString = expressionArray.join('.')
+                const forExpr = `${stateName} trackBy ${memberExpressionString}`
+                setJSXAttr(component.node, Adapter.for, t.stringLiteral(forExpr))
+              } else {
+                setJSXAttr(component.node, Adapter.for, t.jSXExpressionContainer(t.identifier(stateName)))
               }
             } else {
               setJSXAttr(component.node, Adapter.for, t.jSXExpressionContainer(t.identifier(stateName)))

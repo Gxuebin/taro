@@ -3,7 +3,8 @@ import {
   internal_safe_set as safeSet,
   commitAttachRef,
   Current,
-  invokeEffects
+  invokeEffects,
+  getIsUsingDiff
 } from '@tarojs/taro'
 import { componentTrigger } from './create-component'
 import { shakeFnFromObject, isEmptyObject, diffObjToPath, isFunction, isUndefined, isArray } from './util'
@@ -173,7 +174,7 @@ function doUpdate (component, prevProps, prevState) {
   }
   data['$taroCompReady'] = true
 
-  const dataDiff = diffObjToPath(data, component.$scope.data)
+  const dataDiff = getIsUsingDiff() ? diffObjToPath(data, component.$scope.data) : data
   const __mounted = component.__mounted
   let snapshot
   if (__mounted) {
@@ -187,8 +188,8 @@ function doUpdate (component, prevProps, prevState) {
   }
 
   const cb = function () {
+    invokeEffects(component)
     if (__mounted) {
-      invokeEffects(component)
       if (component['$$refs'] && component['$$refs'].length > 0) {
         component['$$refs'].forEach(ref => {
           // 只有 component 类型能做判断。因为 querySelector 每次调用都一定返回 nodeRefs，无法得知 dom 类型的挂载状态。
@@ -219,6 +220,11 @@ function doUpdate (component, prevProps, prevState) {
       }
     }
 
+    if (!__mounted) {
+      component.__mounted = true
+      componentTrigger(component, 'componentDidMount')
+    }
+
     if (cbs.length) {
       let i = cbs.length
       while (--i >= 0) {
@@ -228,6 +234,7 @@ function doUpdate (component, prevProps, prevState) {
   }
   if (Object.keys(dataDiff).length === 0) {
     cb()
+    invokeEffects(component)
   } else {
     component.$scope.setData(dataDiff, cb)
   }

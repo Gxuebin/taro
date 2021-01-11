@@ -1,4 +1,8 @@
-import { findRef } from '../utils/index'
+import { findDOMNode } from 'nervjs'
+
+import { findRef } from '../utils'
+
+const MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver
 
 /**
 * 创建 canvas 的绘图上下文 CanvasContext 对象
@@ -8,9 +12,12 @@ import { findRef } from '../utils/index'
 const createCanvasContext = (canvasId, componentInstance) => {
   const refId = `__taroref_${canvasId}`
   const component = findRef(refId, componentInstance)
+  const canvasDom = findDOMNode(component)
 
   /** @type {HTMLCanvasElement} */
-  const canvas = component.vnode.dom.querySelector(`[canvasId=${canvasId}]`)
+  const canvas = canvasDom.querySelector(`[canvasId=${canvasId}]`)
+
+  canvas.setAttribute('canvas-block', true)
 
   /** @type {CanvasRenderingContext2D} */
   const ctx = canvas.getContext('2d')
@@ -48,21 +55,38 @@ const createCanvasContext = (canvasId, componentInstance) => {
    * @todo 每次draw都会读取width和height
    */
   const draw = (reserve = false, callback) => {
-    try {
-      if (!reserve) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
+    if (canvas.getAttribute('canvas-block') === 'false') {
+      drawFunc()
+    } else {
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.type === 'attributes' && mutation.attributeName === 'canvas-block' && canvas.getAttribute('canvas-block') === 'false') {
+            drawFunc()
+          }
+        })
+      })
+      observer.observe(canvas, {
+        attributes: true,
+        attributeFilter: ['canvas-block']
+      })
+    }
+    function drawFunc () {
+      try {
+        if (!reserve) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height)
+        }
+        actions.forEach(({func, args}) => {
+          func.apply(ctx, args)
+        })
+        emptyActions()
+        callback && callback()
+        return Promise.resolve()
+      } catch (e) {
+        /* eslint-disable prefer-promise-reject-errors */
+        return Promise.reject({
+          errMsg: e.message
+        })
       }
-      actions.forEach(({func, args}) => {
-        func.apply(ctx, args)
-      })
-      emptyActions()
-      callback && callback()
-      return Promise.resolve()
-    } catch (e) {
-      /* eslint-disable prefer-promise-reject-errors */
-      return Promise.reject({
-        errMsg: e.message
-      })
     }
   }
 

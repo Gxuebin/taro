@@ -23,16 +23,21 @@ import {
   recursiveMerge,
   replaceAliasPath,
   resolveScriptPath,
-  checkCliAndFrameworkVersion
-} from '../util'
+  npm as npmProcess,
+  processTypeEnum,
+  PROJECT_CONFIG,
+  REG_SCRIPTS,
+  REG_TYPESCRIPT,
+  createBabelRegister,
+  getModuleDefaultExport
+} from '@tarojs/helper'
 import {
   convertAstExpressionToVariable as toVar,
   convertObjectToAstExpression as objToAst,
   convertSourceStringToAstExpression as toAst
 } from '../util/astConvert'
-import { BUILD_TYPES, processTypeEnum, PROJECT_CONFIG, REG_SCRIPTS, REG_TYPESCRIPT } from '../util/constants'
-import * as npmProcess from '../util/npm'
-import { IBuildOptions, IOption } from '../util/types'
+import { checkCliAndFrameworkVersion } from '../util'
+import { IBuildOptions, IOption, IBuildHooks } from '../util/types'
 import {
   APIS_NEED_TO_APPEND_THIS,
   deviceRatioConfigName,
@@ -90,9 +95,14 @@ class Compiler {
   isUi: boolean
 
   constructor (public appPath: string, entryFile?: string, isUi?: boolean) {
+    createBabelRegister({
+      only: [
+        filePath => filePath.indexOf(path.dirname(path.join(appPath, PROJECT_CONFIG))) >= 0
+      ]
+    })
     const projectConfig = recursiveMerge({
       h5: defaultH5Config
-    }, require(path.join(appPath, PROJECT_CONFIG))(merge))
+    }, getModuleDefaultExport(require(resolveScriptPath(path.join(appPath, PROJECT_CONFIG))))(merge))
     this.projectConfig = projectConfig
     const sourceDir = projectConfig.sourceRoot || CONFIG.SOURCE_DIR
     this.sourceRoot = sourceDir
@@ -169,6 +179,7 @@ class Compiler {
       readPromises.push(new Promise((resolve, reject) => {
         klaw(sourcePath)
           .on('data', file => {
+            const REG_IGNORE = /(\\|\/)\.(svn|git)\1/i;
             const relativePath = path.relative(appPath, file.path)
             if (file.stats.isSymbolicLink()) {
               let linkFile = fs.readlinkSync(file.path)
@@ -176,7 +187,7 @@ class Compiler {
                 linkFile = path.resolve(file.path, '..', linkFile)
               }
               readFiles.call(this, linkFile, file.path)
-            } else if (!file.stats.isDirectory()) {
+            } else if (!file.stats.isDirectory() && !REG_IGNORE.test(relativePath)) {
               printLog(processTypeEnum.CREATE, '发现文件', relativePath)
               this.processFiles(file.path, originalFilePath)
             }
@@ -190,7 +201,7 @@ class Compiler {
     return Promise.all(readPromises)
   }
 
-  async buildDist ({ watch, port }: IBuildOptions) {
+  async buildDist ({ watch, port }: IBuildOptions, { modifyWebpackChain, modifyBuildAssets, onBuildFinish }: IBuildHooks) {
     const isMultiRouterMode = get(this.h5Config, 'router.mode') === 'multi'
     const entryFileName = this.entryFileName
     const projectConfig = this.projectConfig
@@ -230,7 +241,7 @@ class Compiler {
       designWidth: projectConfig.designWidth,
       entry: merge(defaultEntry, h5Config.entry),
       env: {
-        TARO_ENV: JSON.stringify(BUILD_TYPES.H5)
+        TARO_ENV: JSON.stringify('h5')
       },
       isWatch: !!watch,
       outputRoot: outputDir,
@@ -240,7 +251,10 @@ class Compiler {
       sass: projectConfig.sass,
       plugins: projectConfig.plugins,
       port,
-      sourceRoot
+      sourceRoot,
+      modifyWebpackChain,
+      modifyBuildAssets,
+      onBuildFinish
     })
 
     const webpackRunner = await npmProcess.getNpmPkg('@tarojs/webpack-runner', this.appPath)
@@ -416,6 +430,7 @@ class Compiler {
                   mode={${JSON.stringify(routerMode)}}
                   history={_taroHistory}
                   routes={[${routes.join(',')}]}
+                  ${tabBar ? `tabBar={this.state.${tabBarConfigName}}` : ''}
                   customRoutes={${JSON.stringify(customRoutes)}} />
                 `
             }
@@ -430,7 +445,7 @@ class Compiler {
             )
 
             node.body = toAst(buildFuncBody(pages), { preserveComments: true })
-
+          } else {
             node.body.body = compact([
               hasComponentDidHide && isComponentWillUnmount && callComponentDidHideNode,
               ...node.body.body,
@@ -781,6 +796,7 @@ class Compiler {
               mode={${JSON.stringify(routerMode)}}
               history={_taroHistory}
               routes={[${route}]}
+              ${tabBar ? `tabBar={this.state.${tabBarConfigName}}` : ''}
               customRoutes={${JSON.stringify(customRoutes)}} />
             `
         }
@@ -808,7 +824,7 @@ class Compiler {
                 )
 
                 node.body = toAst(buildFuncBody(pages), { preserveComments: true })
-
+              } else {
                 node.body.body = compact([
                   hasComponentDidHide && isComponentWillUnmount && callComponentDidHideNode,
                   ...node.body.body,
@@ -1456,14 +1472,14 @@ class Compiler {
 
 export { Compiler }
 
-export async function build (appPath: string, buildConfig: IBuildOptions) {
-  process.env.TARO_ENV = BUILD_TYPES.H5
-  await checkCliAndFrameworkVersion(appPath, BUILD_TYPES.H5)
+export async function build (appPath: string, buildConfig: IBuildOptions, buildHooks: IBuildHooks) {
+  process.env.TARO_ENV = 'h5'
+  await checkCliAndFrameworkVersion(appPath, 'h5')
   const compiler = new Compiler(appPath)
   await compiler.clean()
   await compiler.buildTemp()
   if (compiler.h5Config.transformOnly !== true) {
-    await compiler.buildDist(buildConfig)
+    await compiler.buildDist(buildConfig, buildHooks)
   }
   if (buildConfig.watch) {
     compiler.watchFiles()

@@ -22,7 +22,7 @@ import {
   LayoutChangeEvent,
   ImageResolvedAssetSource
 } from 'react-native'
-import { noop } from '../../utils'
+import { noop, omit } from '../../utils'
 // import ClickableSimplified from '../ClickableSimplified'
 import { ImageProps, ImageState, Mode, ResizeModeMap, ResizeMode } from './PropsType'
 
@@ -87,7 +87,9 @@ class _Image extends React.Component<ImageProps, ImageState> {
         layoutWidth
       })
     }
-    this.hasLayout = true
+    if (!!this.state.ratio) {
+      this.hasLayout = true
+    }
   }
 
   loadImg = (props: ImageProps) => {
@@ -104,7 +106,7 @@ class _Image extends React.Component<ImageProps, ImageState> {
     } else {
       const source = typeof props.src === 'string' ? { uri: props.src } : props.src
       const { width, height }: { width: number, height: number } = Image.resolveAssetSource(source) || {}
-      if (this.hasLayout) return
+      if (this.hasLayout && !!this.state.ratio) return
       this.setState({
         ratio: height / width
       })
@@ -157,6 +159,7 @@ class _Image extends React.Component<ImageProps, ImageState> {
         return flattenStyle.height || 225
       }
     })()
+    const restImageProps = omit(this.props, ['source', 'src', 'resizeMode', 'onLoad', 'onError', 'onLayout', 'style'])
 
     return (
       <Image
@@ -174,6 +177,7 @@ class _Image extends React.Component<ImageProps, ImageState> {
             height: imageHeight
           }
         ]}
+        {...restImageProps}
       />
     )
   }

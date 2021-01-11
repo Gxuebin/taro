@@ -1,14 +1,12 @@
 import * as path from 'path'
 import * as fs from 'fs-extra'
-import chalk from 'chalk'
 import * as inquirer from 'inquirer'
 import * as semver from 'semver'
 import { createApp } from './init'
 import fetchTemplate from './fetchTemplate'
 import Creator from './creator'
 import CONFIG from '../config'
-import { DEFAULT_TEMPLATE_SRC, TARO_CONFIG_FLODER, TARO_BASE_CONFIG } from '../util/constants'
-import { getUserHomeDir } from '../util'
+import { DEFAULT_TEMPLATE_SRC, TARO_CONFIG_FLODER, TARO_BASE_CONFIG, getUserHomeDir, chalk } from '@tarojs/helper'
 
 export interface IProjectConf {
   projectName: string,
@@ -51,7 +49,7 @@ export default class Project extends Creator {
   }
 
   init () {
-    console.log(chalk.green(`Taro即将创建一个新项目!`))
+    console.log(chalk.green(`Taro 即将创建一个新项目!`))
     console.log('Need help? Go and open issue: https://github.com/NervJS/taro/issues/new')
     console.log()
   }

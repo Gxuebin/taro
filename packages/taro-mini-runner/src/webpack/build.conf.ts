@@ -1,12 +1,13 @@
 import * as path from 'path'
 
+import { PARSE_AST_TYPE } from '@tarojs/helper'
+
 import { IBuildConfig } from '../utils/types'
 import {
   getCopyWebpackPlugin,
   getDefinePlugin,
   processEnvOption,
   getCssoWebpackPlugin,
-  getUglifyPlugin,
   getDevtool,
   getOutput,
   getModule,
@@ -15,16 +16,20 @@ import {
   getMiniCssExtractPlugin,
   getEntry,
 } from './chain'
-import getBaseConf from './base.conf'
-import { BUILD_TYPES, PARSE_AST_TYPE, MINI_APP_FILES } from '../utils/constants'
-import { Targets } from '../plugins/MiniPlugin'
+import { createTarget } from '../plugins/MiniPlugin'
 
 const emptyObj = {}
 
-export default (appPath: string, mode, config: Partial<IBuildConfig>): any => {
-  const chain = getBaseConf(appPath)
+export default (appPath: string, mode, config: Partial<IBuildConfig>, chain: any): any => {
   const {
-    buildAdapter = BUILD_TYPES.WEAPP,
+    buildAdapter,
+    fileType = {
+      style: '.wxss',
+      config: '.json',
+      script: '.js',
+      templ: '.wxml'
+    },
+    globalObject = 'wx',
     alias = emptyObj,
     entry = emptyObj,
     output = emptyObj,
@@ -38,24 +43,26 @@ export default (appPath: string, mode, config: Partial<IBuildConfig>): any => {
     defineConstants = emptyObj,
     env = emptyObj,
     cssLoaderOption = emptyObj,
-    sassLoaderOption = emptyObj,
-    lessLoaderOption = emptyObj,
-    stylusLoaderOption = emptyObj,
     mediaUrlLoaderOption = emptyObj,
     fontUrlLoaderOption = emptyObj,
     imageUrlLoaderOption = emptyObj,
     miniCssExtractPluginOption = emptyObj,
+    compile = emptyObj,
 
     postcss = emptyObj,
     nodeModulesPath,
     quickappJSON,
+    isBuildQuickapp = false,
+    isUseComponentBuildPage = false,
 
     babel,
     csso,
-    uglify,
-    commonChunks
-  } = config
+    commonChunks,
+    addChunkPages,
 
+    modifyBuildAssets,
+    modifyBuildTempFileContent
+  } = config
   let { copy } = config
 
   const plugin: any = {}
@@ -67,10 +74,6 @@ export default (appPath: string, mode, config: Partial<IBuildConfig>): any => {
     patterns.push({
       from: path.join(sourceRoot, 'plugin', 'doc'),
       to: path.join(outputRoot, 'doc')
-    })
-    patterns.push({
-      from: path.join(sourceRoot, 'plugin', 'plugin.json'),
-      to: path.join(outputRoot, 'plugin', 'plugin.json')
     })
     copy = Object.assign({}, copy, { patterns })
   }
@@ -84,7 +87,15 @@ export default (appPath: string, mode, config: Partial<IBuildConfig>): any => {
     isBuildPlugin: config.isBuildPlugin
   })
   plugin.definePlugin = getDefinePlugin([constantsReplaceList])
-  const customCommonChunks = commonChunks && commonChunks.length ? commonChunks : !!config.isBuildPlugin ? ['plugin/runtime', 'plugin/vendors'] : ['runtime', 'vendors']
+  const defaultCommonChunks = !!config.isBuildPlugin
+    ? ['plugin/runtime', 'plugin/vendors', 'plugin/taro', 'plugin/common']
+    : ['runtime', 'vendors', 'taro', 'common']
+  let customCommonChunks = defaultCommonChunks
+  if (typeof commonChunks === 'function') {
+    customCommonChunks = commonChunks(defaultCommonChunks.concat()) || defaultCommonChunks
+  } else if (Array.isArray(commonChunks) && commonChunks.length) {
+    customCommonChunks = commonChunks
+  }
   plugin.miniPlugin = getMiniPlugin({
     sourceDir,
     outputDir,
@@ -92,40 +103,36 @@ export default (appPath: string, mode, config: Partial<IBuildConfig>): any => {
     constantsReplaceList,
     nodeModulesPath,
     quickappJSON,
+    isBuildQuickapp,
     designWidth,
     pluginConfig: entryRes!.pluginConfig,
+    pluginMainEntry: entryRes!.pluginMainEntry,
     isBuildPlugin: !!config.isBuildPlugin,
     commonChunks: customCommonChunks,
-    alias
+    addChunkPages,
+    alias,
+    fileType,
+    modifyBuildAssets,
+    modifyBuildTempFileContent
   })
 
   plugin.miniCssExtractPlugin = getMiniCssExtractPlugin([{
-    filename: `[name]${MINI_APP_FILES[buildAdapter].STYLE}`,
-    chunkFilename: `[name]${MINI_APP_FILES[buildAdapter].STYLE}`
+    filename: `[name]${fileType.style}`,
+    chunkFilename: `[name]${fileType.style}`
   }, miniCssExtractPluginOption])
 
   const isCssoEnabled = (csso && csso.enable === false)
     ? false
     : true
 
-  const isUglifyEnabled = (uglify && uglify.enable === false)
-    ? false
-    : true
-
   if (mode === 'production') {
-    if (isUglifyEnabled) {
-      minimizer.push(getUglifyPlugin([
-        enableSourceMap,
-        uglify ? uglify.config : {}
-      ]))
-    }
-
     if (isCssoEnabled) {
       const cssoConfig: any = csso ? csso.config : {}
       plugin.cssoWebpackPlugin = getCssoWebpackPlugin([cssoConfig])
     }
   }
-  chain.merge({
+  const taroBaseReg = new RegExp(`@tarojs[\\/]taro|@tarojs[\\/]${buildAdapter}`)
+  return {
     mode,
     devtool: getDevtool(enableSourceMap),
     watch: mode === 'development',
@@ -133,13 +140,15 @@ export default (appPath: string, mode, config: Partial<IBuildConfig>): any => {
     output: getOutput(appPath, [{
       outputRoot,
       publicPath: '/',
-      buildAdapter,
-      isBuildPlugin: config.isBuildPlugin
+      globalObject
     }, output]),
-    target: Targets[buildAdapter],
+    target: createTarget[buildAdapter!],
     resolve: { alias },
     module: getModule(appPath, {
       sourceDir,
+      fileType,
+      isBuildQuickapp,
+      isUseComponentBuildPage,
 
       buildAdapter,
       constantsReplaceList,
@@ -148,17 +157,16 @@ export default (appPath: string, mode, config: Partial<IBuildConfig>): any => {
       enableSourceMap,
 
       cssLoaderOption,
-      lessLoaderOption,
-      sassLoaderOption,
-      stylusLoaderOption,
       fontUrlLoaderOption,
       imageUrlLoaderOption,
       mediaUrlLoaderOption,
 
       postcss,
+      compile,
       babel,
-      alias
-    }),
+      alias,
+      nodeModulesPath
+    }, chain),
     plugin,
     optimization: {
       minimizer,
@@ -169,16 +177,29 @@ export default (appPath: string, mode, config: Partial<IBuildConfig>): any => {
         chunks: 'all',
         maxInitialRequests: Infinity,
         minSize: 0,
-        name: !!config.isBuildPlugin ? 'plugin/vendors' : 'vendors',
         cacheGroups: {
+          common: {
+            name: !!config.isBuildPlugin ? 'plugin/common' : 'common',
+            minChunks: 2,
+            priority: 1
+          },
           vendors: {
-            test (module) {
+            name: !!config.isBuildPlugin ? 'plugin/vendors' : 'vendors',
+            minChunks: 2,
+            test: module => {
               return /[\\/]node_modules[\\/]/.test(module.resource) && module.miniType !== PARSE_AST_TYPE.COMPONENT
-            }
+            },
+            priority: 10
+          },
+          taro: {
+            name: !!config.isBuildPlugin ? 'plugin/taro' : 'taro',
+            test: module => {
+              return taroBaseReg.test(module.context)
+            },
+            priority: 100
           }
         }
       }
     }
-  })
-  return chain
+  }
 }

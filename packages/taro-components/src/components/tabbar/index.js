@@ -6,7 +6,7 @@ import resolvePathname from 'resolve-pathname'
 
 import TabbarItem from './tabbarItem'
 import { splitUrl } from '../../utils'
-import './style/index.scss'
+import './style/index.css'
 
 // const removeLeadingSlash = str => str.replace(/^\.?\//, '')
 // const removeTrailingSearch = str => str.replace(/\?[\s\S]*$/, '')
@@ -115,6 +115,8 @@ class Tabbar extends Nerv.Component {
   }
 
   tabbarRef = (ref) => {
+    if (!ref) return
+
     const domNode = findDOMNode(ref)
     this.tabbar = domNode
   }
@@ -265,7 +267,9 @@ class Tabbar extends Nerv.Component {
   }
 
   componentDidMount () {
-    this.tabbarPos = this.vnode.dom.nextElementSibling
+    if (!this.tabbar) return
+
+    this.tabbarPos = this.tabbar.nextElementSibling
       ? 'top'
       : 'bottom'
     this.bindEvent()

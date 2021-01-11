@@ -29,7 +29,7 @@ class _RadioGroup extends React.Component<RadioGroupProps, RadioGroupState> {
   }
 
   findAndAttachCb = (children: any): React.ReactNode => {
-    return React.Children.toArray(children).map((child) => {
+    return React.Children.toArray(children).map((child: any) => {
       if (!child.type) return child
 
       const childTypeName = child.type.name
@@ -40,7 +40,7 @@ class _RadioGroup extends React.Component<RadioGroupProps, RadioGroupState> {
           _onGroupDataInitial(child.props.value)
         }
         return React.cloneElement(child, {
-          checked: checkedValue === child.props.value,
+          checked: checkedValue ? checkedValue == child.props.value : child.props.checked,
           onChange: this.onValueChange.bind(this, child.props.onChange)
         })
       } else {

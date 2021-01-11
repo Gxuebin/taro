@@ -1,7 +1,7 @@
 import 'weui'
 import Nerv from 'nervjs'
 import classNames from 'classnames'
-import './style/index.scss'
+import './style/index.css'
 
 require('intersection-observer')
 
@@ -9,8 +9,7 @@ class Image extends Nerv.Component {
   constructor () {
     super(...arguments)
     this.state = {
-      isLoaded: false,
-      aspectFillMode: 'width'
+      isLoaded: false
     }
     this.imageOnLoad = this.imageOnLoad.bind(this)
     this.observer = {}
@@ -46,11 +45,6 @@ class Image extends Nerv.Component {
         height: this.imgRef.height
       }
     })
-    if (this.imgRef.naturalWidth > this.imgRef.naturalHeight) {
-      this.setState({ aspectFillMode: 'width' })
-    } else {
-      this.setState({ aspectFillMode: 'height' })
-    }
     onLoad && onLoad(e)
   }
 
@@ -62,9 +56,9 @@ class Image extends Nerv.Component {
       mode,
       onError,
       lazyLoad,
+      imgProps,
       ...reset
     } = this.props
-    const { aspectFillMode } = this.state
     const cls = classNames(
       'taro-img',
       {
@@ -74,10 +68,7 @@ class Image extends Nerv.Component {
     )
     const imgCls = classNames(
       'taro-img__mode-' +
-        (mode || 'scaleToFill').toLowerCase().replace(/\s/g, ''),
-      {
-        [`taro-img__mode-aspectfill--${aspectFillMode}`]: mode === 'aspectFill'
-      }
+        (mode || 'scaleToFill').toLowerCase().replace(/\s/g, '')
     )
 
     return (
@@ -89,6 +80,7 @@ class Image extends Nerv.Component {
             data-src={src}
             onLoad={this.imageOnLoad}
             onError={onError}
+            {...imgProps}
           />
         ) : (
           <img
@@ -97,6 +89,7 @@ class Image extends Nerv.Component {
             src={src}
             onLoad={this.imageOnLoad}
             onError={onError}
+            {...imgProps}
           />
         )}
       </div>
